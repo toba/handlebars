@@ -1,0 +1,45 @@
+{
+   "name": "@toba/handlebars",
+   "version": "1.0.0",
+   "description": "Toba Handlebars module",
+   "private": false,
+   "author": {
+      "name": "Jason Abbott",
+      "url": "http://github.com/toba"
+   },
+   "license": "MIT",
+   "publishConfig": {
+      "access": "public"
+   },
+   "main": "dist/index.js",
+   "types:": "dist/index.d.ts",
+   "files": [
+      "dist/**/*"
+   ],
+   "scripts": {
+      "prepublishOnly": "./node_modules/.bin/tsc",
+      "test": "jest --coverage"
+   },
+   "devDependencies": {
+      "@toba/build": "^1.7.0",
+      "@toba/test": "^1.19.0",
+      "@types/handlebars": "^4.0.38",
+      "prettier": "^1.13.0",
+      "typescript": "^2.9.0"
+   },
+   "repository": {
+      "type": "git",
+      "url": "https://github.com/toba/handlebars"
+   },
+   "bugs": {
+      "url": "https://github.com/toba/handlebars/issues"
+   },
+   "prettier": {
+      "singleQuote": true,
+      "tabWidth": 3
+   },
+   "dependencies": {
+      "@toba/tools": "^3.3.0",
+      "handlebars": "^4.0.11"
+   }
+}
