@@ -1,19 +1,31 @@
 import * as fs from 'fs';
-//import * as path from 'path';
+import * as path from 'path';
 import * as Handlebars from 'handlebars';
-import { Cache, merge } from '@toba/tools';
+import { Cache, merge, is, Encoding } from '@toba/tools';
 
+/**
+ * Configuration that applies globally to the Handlebars renderer.
+ */
 export interface ExpressHandlebarsOptions {
-   /** Default layout template should be rendered within. */
+   /** Default layout the view templates should be rendered within. */
    defaultLayout: string;
-   /** Folder within Express views containing partials. */
+   /**
+    * Fully qualified path to views. This duplicates the Express `views` but is
+    * available sooner, before a rendering request, allowing earlier caching of
+    * templates.
+    */
+   viewPath: string;
+   /** Folder within Express `views` containing partials. */
    partialsFolder: string;
-   /** Folder within Express views containing layouts. */
+   /** Folder within Express `views` containing layouts. */
    layoutsFolder: string;
-   /** Whether to cache templates. */
+   /** Whether to cache templates (default is `true`). */
    cacheTemplates: boolean;
 }
 
+/**
+ * Method called when a template has been rendered.
+ */
 type RenderCallback = (err: Error, output?: string) => void;
 
 /**
@@ -32,18 +44,28 @@ interface ExpressSettings {
    'trust proxy': boolean;
 }
 
+/**
+ * Context values available within templates and settings passed with each
+ * `render()` call.
+ */
 interface RenderContext {
    [key: string]: any;
    /** Cache flag injected by Express. */
    cache?: boolean;
    settings?: ExpressSettings;
-   template?: string;
+   /**
+    * Layout to render content within. Handlebars doesn't support layouts per se
+    * so the layout becomes the view template to render with a `body` block
+    * that the given view name is assigned to.
+    */
+   layout?: string;
 }
 
 const defaultOptions: ExpressHandlebarsOptions = {
    defaultLayout: 'main.hbs',
    partialsFolder: 'partials',
    layoutsFolder: 'layouts',
+   viewPath: null,
    cacheTemplates: true
 };
 
@@ -51,23 +73,38 @@ const defaultOptions: ExpressHandlebarsOptions = {
  *
  */
 export class ExpressHandlebars {
-   options: ExpressHandlebarsOptions;
+   /** Template file extension that will be handled by this renderer. */
    fileExtension: string;
-   cache: Cache<Handlebars.TemplateDelegate<any>>;
-   hbs: typeof Handlebars;
+   private options: ExpressHandlebarsOptions;
+   private cache: Cache<Handlebars.TemplateDelegate<any>>;
+   private hbs: typeof Handlebars;
    /**
     * @see http://handlebarsjs.com/execution.html
     * @see https://github.com/ericf/express-handlebars/blob/master/lib/express-handlebars.js#L211
     */
-   defaultRenderOptions: Handlebars.RuntimeOptions;
+   renderOptions: Handlebars.RuntimeOptions;
 
    constructor(options: Partial<ExpressHandlebarsOptions> = {}) {
       this.options = merge(defaultOptions, options);
       this.hbs = Handlebars.create();
-      this.fileExtension = 'hbs';
       this.cache = new Cache();
+      this.fileExtension = 'hbs';
       this.renderer = this.renderer.bind(this);
       this.registerHelper = this.registerHelper.bind(this);
+
+      if (!is.value(this.options.viewPath)) {
+         throw new ReferenceError('viewPath option must be defined');
+      }
+
+      const partials = this.precompile(
+         this.options.viewPath,
+         this.options.layoutsFolder,
+         this.options.partialsFolder
+      );
+
+      if (partials != null) {
+         partials.forEach((value, key) => this.cache.add(key, value));
+      }
    }
 
    /**
@@ -84,47 +121,39 @@ export class ExpressHandlebars {
     */
    renderer(viewPath: string, context: RenderContext, cb?: RenderCallback) {
       const layout =
-         context.template === undefined
+         context.layout === undefined
             ? this.options.defaultLayout
-            : context.template;
+            : context.layout;
 
       if (layout !== null) {
-         // render view within the layout
-         return this.renderWithinLayout(layout, viewPath, context, cb);
+         // render view within the layout, otherwise render without layout
+         context.body = layout;
+         viewPath = layout;
       }
-
-      if (this.cache.contains(viewPath)) {
-         const template = this.cache.get(viewPath);
-         cb(null, template(context));
-      } else {
-         fs.readFile(viewPath, (err, content) => {
-            if (err) {
-               return cb(err);
-            }
-            const template = this.hbs.compile(content);
-            this.cache.add(viewPath, template);
-            cb(null, template(context));
-         });
-      }
+      this.render(viewPath, context, cb);
    }
 
-   renderWithinLayout(
-      layout: string,
+   private render(
       viewPath: string,
       context: RenderContext,
       cb?: RenderCallback
    ) {
+      const options: Handlebars.RuntimeOptions = this.renderOptions;
+
       if (this.cache.contains(viewPath)) {
          const template = this.cache.get(viewPath);
-         cb(null, template(context));
+         cb(null, template(context, options));
       } else {
-         fs.readFile(viewPath, (err, content) => {
+         fs.readFile(viewPath, (err: Error, content: Buffer) => {
             if (err) {
                return cb(err);
             }
-            const template = this.hbs.compile(content);
+            const template = this.hbs.compile(
+               content.toString(Encoding.UTF8),
+               options
+            );
             this.cache.add(viewPath, template);
-            cb(null, template(context));
+            cb(null, template(context, options));
          });
       }
    }
@@ -134,5 +163,34 @@ export class ExpressHandlebars {
     */
    registerHelper(name: string, fn: Handlebars.HelperDelegate) {
       this.hbs.registerHelper(name, fn);
+   }
+
+   /**
+    * Precompile templates in given folders relative to a base path.
+    */
+   private precompile(
+      basePath: string,
+      ...folders: string[]
+   ): Map<string, Handlebars.TemplateDelegate<any>> {
+      const found: Map<string, Handlebars.TemplateDelegate<any>> = new Map();
+      const options = this.renderOptions;
+
+      folders.forEach(f => {
+         const fullPath = path.join(basePath, f);
+         const files = fs.readdirSync(fullPath);
+         files
+            .filter(fileName => fileName.endsWith(this.fileExtension))
+            .forEach(fileName => {
+               const filePath = path.join(fullPath, fileName);
+               const content = fs.readFileSync(filePath);
+               const template = this.hbs.compile(
+                  content.toString(Encoding.UTF8),
+                  options
+               );
+               found.set(filePath, template);
+            });
+      });
+
+      return found.size > 0 ? found : null;
    }
 }
