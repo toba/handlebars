@@ -8,5 +8,19 @@
 # Usage
 
 ```
-yarn add @toba/handlebars --dev
+yarn add @toba/handlebars
 ```
+
+## Express
+
+```ts
+import { ExpressHandlebars } from '@toba/handlebars';
+const ehb = new ExpressHandlebars();
+app.engine(ehb.name, ehb.renderer);
+app.set('views', './views');
+app.set('view engine', ehb.name);
+```
+
+## Koa
+
+## Fastify
