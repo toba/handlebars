@@ -9,7 +9,7 @@ const viewPath = path.join(__dirname, '__mocks__', 'views');
 const app = Express();
 
 beforeAll(() => {
-   const ehb = new ExpressHandlebars(viewPath);
+   const ehb = new ExpressHandlebars();
    app.set('views', viewPath);
    app.set('view engine', ehb.fileExtension);
    app.engine(ehb.fileExtension, ehb.renderer);
@@ -29,24 +29,16 @@ function makeRoute(path: string, viewName: string, layout?: string) {
    });
 }
 
-test(
-   'renders without layout',
-   async () => {
-      makeRoute('/', 'home', null);
-      const res = await request(app).get('/');
-      expect(res.status).toBe(HttpStatus.OK);
-      expect(res.text).toMatchSnapshot();
-   },
-   10000
-);
+test('renders without layout', async () => {
+   makeRoute('/', 'home', null);
+   const res = await request(app).get('/');
+   expect(res.status).toBe(HttpStatus.OK);
+   expect(res.text).toMatchSnapshot();
+});
 
-test(
-   'renders within layout',
-   async () => {
-      makeRoute('/home', 'home');
-      const res = await request(app).get('/home');
-      expect(res.status).toBe(HttpStatus.OK);
-      expect(res.text).toMatchSnapshot();
-   },
-   10000
-);
+test('renders within layout', async () => {
+   makeRoute('/home', 'home');
+   const res = await request(app).get('/home');
+   expect(res.status).toBe(HttpStatus.OK);
+   expect(res.text).toMatchSnapshot();
+});

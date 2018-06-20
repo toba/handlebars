@@ -1,5 +1,25 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`renders within layout 1`] = `
+"<!DOCTYPE html>
+<html lang=\\"en\\">
+
+<head>
+   <meta value=\\"something\\" /></head>
+
+<body>
+   <nav>
+   Navigation
+</nav> <article>
+   <h1>Body</h1>
+</article> <footer>
+   Footer
+</footer>
+</body>
+
+</html>"
+`;
+
 exports[`renders without layout 1`] = `
 "<article>
    <h1>Body</h1>

@@ -79,6 +79,7 @@ export class ExpressHandlebars {
    private hbs: typeof Handlebars;
    private basePath: string;
    private re: RegExp;
+   private partialsLoaded = false;
    /**
     * Runtime options can take a hash of precompiled template partials to speed
     * up rendering.
@@ -93,10 +94,7 @@ export class ExpressHandlebars {
     * Express `views` but is available sooner, before a rendering request,
     * allowing earlier caching of templates.
     */
-   constructor(
-      basePath: string,
-      options: Partial<ExpressHandlebarsOptions> = {}
-   ) {
+   constructor(options: Partial<ExpressHandlebarsOptions> = {}) {
       this.options = merge(defaultOptions, options);
       this.hbs = Handlebars.create();
       this.cache = new Cache();
@@ -110,14 +108,17 @@ export class ExpressHandlebars {
       this.options.defaultLayout = this.addExtension(
          this.options.defaultLayout
       );
-      this.basePath = basePath;
-      this.loadPartials(this.options.partialsFolder);
    }
 
    private addExtension = (filePath: string): string =>
       is.empty(filePath) || filePath.endsWith(this.fileExtension)
          ? filePath
          : `${filePath}.${this.fileExtension}`;
+
+   private partialName = (filePath: string): string => {
+      const parts = filePath.split(/[/\\]/);
+      return parts[parts.length - 1].replace('.' + this.fileExtension, '');
+   };
 
    /**
     * Express standard renderer. Express adds the defined file extention to the
@@ -132,15 +133,21 @@ export class ExpressHandlebars {
     *
     * @see https://expressjs.com/en/advanced/developing-template-engines.html
     */
-   renderer(viewPath: string, context: RenderContext, cb?: RenderCallback) {
+   async renderer(
+      viewPath: string,
+      context: RenderContext,
+      cb?: RenderCallback
+   ) {
       const layout =
          context.layout === undefined
             ? this.options.defaultLayout
             : context.layout;
 
+      this.basePath = context.settings.views;
+
       if (layout !== null) {
          // render view within the layout, otherwise render without layout
-         context.body = viewPath;
+         context.body = await this.loadTemplate(viewPath);
          viewPath = path.join(
             this.basePath,
             this.options.layoutsFolder,
@@ -155,9 +162,18 @@ export class ExpressHandlebars {
       context: RenderContext,
       cb?: RenderCallback
    ) {
+      if (!this.partialsLoaded) {
+         try {
+            await this.loadPartials(this.options.partialsFolder);
+            this.partialsLoaded = true;
+         } catch (err) {
+            cb(err);
+         }
+      }
+
       try {
          const template = await this.loadTemplate(viewPath);
-         cb(null, template(context));
+         cb(null, template(context, this.renderOptions));
       } catch (err) {
          cb(err);
       }
@@ -173,7 +189,6 @@ export class ExpressHandlebars {
       addToRenderOptions = false
    ): Promise<Handlebars.TemplateDelegate> =>
       new Promise((resolve, reject) => {
-         const options: Handlebars.RuntimeOptions = this.renderOptions;
          if (this.cache.contains(filePath)) {
             resolve(this.cache.get(filePath));
          } else {
@@ -183,12 +198,14 @@ export class ExpressHandlebars {
                   return;
                }
                const template = this.hbs.compile(
-                  content.toString(Encoding.UTF8),
-                  options
+                  content.toString(Encoding.UTF8)
                );
                this.cache.add(filePath, template);
+
                if (addToRenderOptions) {
-                  this.renderOptions.partials[filePath] = template;
+                  this.renderOptions.partials[
+                     this.partialName(filePath)
+                  ] = template;
                }
                resolve(template);
             });
@@ -220,14 +237,16 @@ export class ExpressHandlebars {
     * Precompile templates in given folders relative to a base path.
     */
    private loadPartials(...folders: string[]): void {
-      folders.forEach(f => {
+      folders.forEach(async f => {
          const fullPath = path.join(this.basePath, f);
          const files = fs.readdirSync(fullPath);
-         files
-            .filter(fileName => fileName.endsWith(this.fileExtension))
-            .forEach(async fileName => {
-               await this.loadTemplate(path.join(fullPath, fileName), true);
-            });
+         await Promise.all(
+            files
+               .filter(fileName => fileName.endsWith(this.fileExtension))
+               .map(fileName =>
+                  this.loadTemplate(path.join(fullPath, fileName), true)
+               )
+         );
       });
    }
 }
