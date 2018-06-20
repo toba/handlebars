@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`creates stuff 1`] = `
+exports[`renders without layout 1`] = `
 "<article>
    <h1>Body</h1>
 </article>"

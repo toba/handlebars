@@ -7,20 +7,19 @@ import { Cache, merge, is, Encoding } from '@toba/tools';
  * Configuration that applies globally to the Handlebars renderer.
  */
 export interface ExpressHandlebarsOptions {
-   /** Default layout the view templates should be rendered within. */
-   defaultLayout: string;
    /**
-    * Fully qualified path to views. This duplicates the Express `views` but is
-    * available sooner, before a rendering request, allowing earlier caching of
-    * templates.
+    * Default layout file name without extension the view templates should be
+    * rendered within.
     */
-   viewPath: string;
+   defaultLayout: string;
    /** Folder within Express `views` containing partials. */
    partialsFolder: string;
    /** Folder within Express `views` containing layouts. */
    layoutsFolder: string;
    /** Whether to cache templates (default is `true`). */
    cacheTemplates: boolean;
+   /** File extension the renderer should handle. Default is `hbs`. */
+   fileExtension: string;
 }
 
 /**
@@ -62,11 +61,11 @@ interface RenderContext {
 }
 
 const defaultOptions: ExpressHandlebarsOptions = {
-   defaultLayout: 'main.hbs',
+   defaultLayout: 'main',
    partialsFolder: 'partials',
    layoutsFolder: 'layouts',
-   viewPath: null,
-   cacheTemplates: true
+   cacheTemplates: true,
+   fileExtension: 'hbs'
 };
 
 /**
@@ -78,37 +77,51 @@ export class ExpressHandlebars {
    private options: ExpressHandlebarsOptions;
    private cache: Cache<Handlebars.TemplateDelegate<any>>;
    private hbs: typeof Handlebars;
+   private basePath: string;
+   private re: RegExp;
    /**
+    * Runtime options can take a hash of precompiled template partials to speed
+    * up rendering.
     * @see http://handlebarsjs.com/execution.html
     * @see https://github.com/ericf/express-handlebars/blob/master/lib/express-handlebars.js#L211
     */
    renderOptions: Handlebars.RuntimeOptions;
 
-   constructor(options: Partial<ExpressHandlebarsOptions> = {}) {
+   /**
+    *
+    * @param basePath Fully qualified path to views. This duplicates the
+    * Express `views` but is available sooner, before a rendering request,
+    * allowing earlier caching of templates.
+    */
+   constructor(
+      basePath: string,
+      options: Partial<ExpressHandlebarsOptions> = {}
+   ) {
       this.options = merge(defaultOptions, options);
       this.hbs = Handlebars.create();
       this.cache = new Cache();
-      this.fileExtension = 'hbs';
+      this.fileExtension = this.options.fileExtension;
       this.renderer = this.renderer.bind(this);
       this.registerHelper = this.registerHelper.bind(this);
-
-      if (!is.value(this.options.viewPath)) {
-         throw new ReferenceError('viewPath option must be defined');
-      }
-
-      const partials = this.precompile(
-         this.options.viewPath,
-         this.options.layoutsFolder,
-         this.options.partialsFolder
+      this.renderOptions = {
+         partials: {}
+      };
+      this.re = new RegExp(`\.${this.fileExtension}$`, 'i');
+      this.options.defaultLayout = this.addExtension(
+         this.options.defaultLayout
       );
-
-      if (partials != null) {
-         partials.forEach((value, key) => this.cache.add(key, value));
-      }
+      this.basePath = basePath;
+      this.loadPartials(this.options.partialsFolder);
    }
 
+   private addExtension = (filePath: string): string =>
+      is.empty(filePath) || filePath.endsWith(this.fileExtension)
+         ? filePath
+         : `${filePath}.${this.fileExtension}`;
+
    /**
-    * Express standard renderer.
+    * Express standard renderer. Express adds the defined file extention to the
+    * view name before passing it.
     *
     * @example
     *    import { ExpressHandlebars } from '@toba/handlebars';
@@ -127,70 +140,94 @@ export class ExpressHandlebars {
 
       if (layout !== null) {
          // render view within the layout, otherwise render without layout
-         context.body = layout;
-         viewPath = layout;
+         context.body = viewPath;
+         viewPath = path.join(
+            this.basePath,
+            this.options.layoutsFolder,
+            layout
+         );
       }
       this.render(viewPath, context, cb);
    }
 
-   private render(
+   private async render(
       viewPath: string,
       context: RenderContext,
       cb?: RenderCallback
    ) {
-      const options: Handlebars.RuntimeOptions = this.renderOptions;
+      try {
+         const template = await this.loadTemplate(viewPath);
+         cb(null, template(context));
+      } catch (err) {
+         cb(err);
+      }
+   }
 
-      if (this.cache.contains(viewPath)) {
-         const template = this.cache.get(viewPath);
-         cb(null, template(context, options));
+   /**
+    * Load template from cache or from file system if not cached.
+    * @param addToRenderOptions Whether to add template to render option
+    * partials
+    */
+   private loadTemplate = (
+      filePath: string,
+      addToRenderOptions = false
+   ): Promise<Handlebars.TemplateDelegate> =>
+      new Promise((resolve, reject) => {
+         const options: Handlebars.RuntimeOptions = this.renderOptions;
+         if (this.cache.contains(filePath)) {
+            resolve(this.cache.get(filePath));
+         } else {
+            fs.readFile(filePath, (err: Error, content: Buffer) => {
+               if (err) {
+                  reject(err);
+                  return;
+               }
+               const template = this.hbs.compile(
+                  content.toString(Encoding.UTF8),
+                  options
+               );
+               this.cache.add(filePath, template);
+               if (addToRenderOptions) {
+                  this.renderOptions.partials[filePath] = template;
+               }
+               resolve(template);
+            });
+         }
+      });
+
+   /**
+    * Add helper function to template context.
+    */
+   registerHelper(name: string, fn: Handlebars.HelperDelegate): void;
+   /**
+    * Add map of helper functions to template context.
+    */
+   registerHelper(map: { [key: string]: Handlebars.HelperDelegate }): void;
+   registerHelper(
+      mapOrName: string | { [key: string]: Handlebars.HelperDelegate },
+      fn?: Handlebars.HelperDelegate
+   ) {
+      if (is.text(mapOrName)) {
+         this.hbs.registerHelper(name, fn);
       } else {
-         fs.readFile(viewPath, (err: Error, content: Buffer) => {
-            if (err) {
-               return cb(err);
-            }
-            const template = this.hbs.compile(
-               content.toString(Encoding.UTF8),
-               options
-            );
-            this.cache.add(viewPath, template);
-            cb(null, template(context, options));
+         Object.keys(mapOrName).forEach(key => {
+            this.hbs.registerHelper(key, mapOrName[key]);
          });
       }
    }
 
    /**
-    * Expose useful methods.
-    */
-   registerHelper(name: string, fn: Handlebars.HelperDelegate) {
-      this.hbs.registerHelper(name, fn);
-   }
-
-   /**
     * Precompile templates in given folders relative to a base path.
     */
-   private precompile(
-      basePath: string,
-      ...folders: string[]
-   ): Map<string, Handlebars.TemplateDelegate<any>> {
-      const found: Map<string, Handlebars.TemplateDelegate<any>> = new Map();
-      const options = this.renderOptions;
-
+   private loadPartials(...folders: string[]): void {
       folders.forEach(f => {
-         const fullPath = path.join(basePath, f);
+         const fullPath = path.join(this.basePath, f);
          const files = fs.readdirSync(fullPath);
          files
             .filter(fileName => fileName.endsWith(this.fileExtension))
-            .forEach(fileName => {
-               const filePath = path.join(fullPath, fileName);
-               const content = fs.readFileSync(filePath);
-               const template = this.hbs.compile(
-                  content.toString(Encoding.UTF8),
-                  options
-               );
-               found.set(filePath, template);
+            .forEach(async fileName => {
+               await this.loadTemplate(path.join(fullPath, fileName), true);
             });
       });
-
-      return found.size > 0 ? found : null;
    }
 }
