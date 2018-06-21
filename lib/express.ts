@@ -101,9 +101,7 @@ export class ExpressHandlebars {
       this.fileExtension = this.options.fileExtension;
       this.renderer = this.renderer.bind(this);
       this.registerHelper = this.registerHelper.bind(this);
-      this.renderOptions = {
-         partials: {}
-      };
+      this.renderOptions = {};
       this.re = new RegExp(`\.${this.fileExtension}$`, 'i');
       this.options.defaultLayout = this.addExtension(
          this.options.defaultLayout
@@ -173,7 +171,7 @@ export class ExpressHandlebars {
 
       try {
          const template = await this.loadTemplate(viewPath);
-         cb(null, template(context, this.renderOptions));
+         cb(null, template(context));
       } catch (err) {
          cb(err);
       }
@@ -181,34 +179,37 @@ export class ExpressHandlebars {
 
    /**
     * Load template from cache or from file system if not cached.
-    * @param addToRenderOptions Whether to add template to render option
+    * @param registerAsPartial Whether to add template to render option
     * partials
     */
    private loadTemplate = (
       filePath: string,
-      addToRenderOptions = false
+      registerAsPartial = false
    ): Promise<Handlebars.TemplateDelegate> =>
       new Promise((resolve, reject) => {
          if (this.cache.contains(filePath)) {
             resolve(this.cache.get(filePath));
          } else {
-            fs.readFile(filePath, (err: Error, content: Buffer) => {
-               if (err) {
-                  reject(err);
-                  return;
-               }
-               const template = this.hbs.compile(
-                  content.toString(Encoding.UTF8)
-               );
-               this.cache.add(filePath, template);
+            fs.readFile(
+               filePath,
+               { encoding: Encoding.UTF8 },
+               (err: Error, content: string) => {
+                  if (err) {
+                     reject(err);
+                     return;
+                  }
+                  const template = this.hbs.compile(content);
+                  this.cache.add(filePath, template);
 
-               if (addToRenderOptions) {
-                  this.renderOptions.partials[
-                     this.partialName(filePath)
-                  ] = template;
+                  if (registerAsPartial) {
+                     this.hbs.registerPartial(
+                        this.partialName(filePath),
+                        template
+                     );
+                  }
+                  resolve(template);
                }
-               resolve(template);
-            });
+            );
          }
       });
 

@@ -42,3 +42,6 @@ test('renders within layout', async () => {
    expect(res.status).toBe(HttpStatus.OK);
    expect(res.text).toMatchSnapshot();
 });
+
+// Error: ENOENT: no such file or directory, open
+// 'D:\dev\src\github.com\trailimage\blog\views\layouts\D:\dev\src\github.com\trailimage\blog\views\default-layout.hbs'
