@@ -30,6 +30,13 @@ function makeRoute(path: string, viewName: string, layout?: string) {
    });
 }
 
+test('renders body with partial within layout', async () => {
+   makeRoute('/body-with-partial', 'partial');
+   const res = await request(app).get('/body-with-partial');
+   expect(res.status).toBe(HttpStatus.OK);
+   expect(res.text).toMatchSnapshot();
+});
+
 test('renders without layout', async () => {
    makeRoute('/', 'home', null);
    const res = await request(app).get('/');

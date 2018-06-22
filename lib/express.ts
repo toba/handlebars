@@ -177,22 +177,20 @@ export class ExpressHandlebars {
 
       if (layout !== null) {
          // render view within the layout, otherwise render without layout
-         const bodyTemplate = await this.loadTemplate(viewPath);
-         context.body = bodyTemplate(context);
-         viewPath = path.join(
-            this.basePath,
-            this.options.layoutsFolder,
-            layout
-         );
+         if (await this.ensurePartialsAreReady(cb)) {
+            const bodyTemplate = await this.loadTemplate(viewPath);
+            context.body = bodyTemplate(context);
+            viewPath = path.join(
+               this.basePath,
+               this.options.layoutsFolder,
+               layout
+            );
+         }
       }
       this.render(viewPath, context, cb);
    }
 
-   private async render(
-      viewPath: string,
-      context: RenderContext,
-      cb?: RenderCallback
-   ) {
+   private async ensurePartialsAreReady(cb?: RenderCallback) {
       if (!this.partialsLoaded) {
          try {
             await this.loadPartials(this.options.partialsFolder);
@@ -201,12 +199,21 @@ export class ExpressHandlebars {
             cb(err);
          }
       }
+      return this.partialsLoaded;
+   }
 
-      try {
-         const template = await this.loadTemplate(viewPath);
-         cb(null, template(context));
-      } catch (err) {
-         cb(err);
+   private async render(
+      viewPath: string,
+      context: RenderContext,
+      cb?: RenderCallback
+   ) {
+      if (await this.ensurePartialsAreReady(cb)) {
+         try {
+            const template = await this.loadTemplate(viewPath);
+            cb(null, template(context));
+         } catch (err) {
+            cb(err);
+         }
       }
    }
 
