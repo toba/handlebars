@@ -81,20 +81,13 @@ export class ExpressHandlebars {
    private cache: Cache<Handlebars.TemplateDelegate<any>>;
    private hbs: typeof Handlebars;
    private basePath: string;
-   private re: RegExp;
+   //private filePattern: RegExp;
    /**
     * Placeholder blocks defined with `block` helper and populated with the
     * `contentFor` helper.
     */
    private placeHolders: Map<string, string[]>;
    private partialsLoaded = false;
-   /**
-    * Runtime options can take a hash of precompiled template partials to speed
-    * up rendering.
-    * @see http://handlebarsjs.com/execution.html
-    * @see https://github.com/ericf/express-handlebars/blob/master/lib/express-handlebars.js#L211
-    */
-   renderOptions: Handlebars.RuntimeOptions;
 
    /**
     *
@@ -109,9 +102,8 @@ export class ExpressHandlebars {
       this.fileExtension = this.options.fileExtension;
       this.renderer = this.renderer.bind(this);
       this.registerHelper = this.registerHelper.bind(this);
-      this.renderOptions = {};
       this.placeHolders = new Map();
-      this.re = new RegExp(`\.${this.fileExtension}$`, 'i');
+      //this.filePattern = new RegExp(`\.${this.fileExtension}$`);
       this.options.defaultLayout = this.addExtension(
          this.options.defaultLayout
       );
@@ -185,7 +177,8 @@ export class ExpressHandlebars {
 
       if (layout !== null) {
          // render view within the layout, otherwise render without layout
-         context.body = await this.loadTemplate(viewPath);
+         const bodyTemplate = await this.loadTemplate(viewPath);
+         context.body = bodyTemplate(context);
          viewPath = path.join(
             this.basePath,
             this.options.layoutsFolder,

@@ -7,6 +7,7 @@ import { HttpStatus } from '@toba/tools';
 
 const viewPath = path.join(__dirname, '__mocks__', 'views');
 const app = Express();
+const items = [{ name: 'one' }, { name: 'two' }, { name: 'three' }];
 
 beforeAll(() => {
    const ehb = new ExpressHandlebars();
@@ -19,7 +20,7 @@ function makeRoute(path: string, viewName: string, layout?: string) {
    app.get(path, (_req: Express.Request, res: Express.Response) => {
       res.render(
          viewName,
-         { key: 'value', layout },
+         { items, title: 'Mockery', layout },
          (err: Error, html: string) => {
             expect(err).toBeNull();
             res.write(html);
@@ -43,5 +44,16 @@ test('renders within layout', async () => {
    expect(res.text).toMatchSnapshot();
 });
 
-// Error: ENOENT: no such file or directory, open
-// 'D:\dev\src\github.com\trailimage\blog\views\layouts\D:\dev\src\github.com\trailimage\blog\views\default-layout.hbs'
+test('renders data', async () => {
+   makeRoute('/bare-data', 'data', null);
+   const res = await request(app).get('/bare-data');
+   expect(res.status).toBe(HttpStatus.OK);
+   expect(res.text).toMatchSnapshot();
+});
+
+test('renders data within layout', async () => {
+   makeRoute('/data', 'data');
+   const res = await request(app).get('/data');
+   expect(res.status).toBe(HttpStatus.OK);
+   expect(res.text).toMatchSnapshot();
+});

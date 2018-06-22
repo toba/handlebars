@@ -1,11 +1,46 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`renders data 1`] = `
+"<h1>Mockery</h1>
+<ol>
+   <li>one</li>
+   <li>two</li>
+   <li>three</li>
+</ol>"
+`;
+
+exports[`renders data within layout 1`] = `
+"<!DOCTYPE html>
+<html lang=\\"en\\">
+
+<head>
+   <meta value=\\"something\\" /> 
+</head>
+
+<body>
+   <nav>
+   Navigation
+</nav> <h1>Mockery</h1>
+<ol>
+   <li>one</li>
+   <li>two</li>
+   <li>three</li>
+</ol> <footer>
+   Footer
+</footer>
+</body>
+
+</html>"
+`;
+
 exports[`renders within layout 1`] = `
 "<!DOCTYPE html>
 <html lang=\\"en\\">
 
 <head>
    <meta value=\\"something\\" />    <meta name=\\"content-for\\" />
+
+   <meta name=\\"content-for\\" />
 
 </head>
 
