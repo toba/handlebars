@@ -44,9 +44,16 @@ test('renders without layout', async () => {
    expect(res.text).toMatchSnapshot();
 });
 
-test('renders within layout', async () => {
+test('renders within default layout', async () => {
    makeRoute('/home', 'home');
    const res = await request(app).get('/home');
+   expect(res.status).toBe(HttpStatus.OK);
+   expect(res.text).toMatchSnapshot();
+});
+
+test('renders within specified layout', async () => {
+   makeRoute('/other', 'home', 'other');
+   const res = await request(app).get('/other');
    expect(res.status).toBe(HttpStatus.OK);
    expect(res.text).toMatchSnapshot();
 });

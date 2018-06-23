@@ -171,7 +171,7 @@ export class ExpressHandlebars {
       const layout =
          context.layout === undefined
             ? this.options.defaultLayout
-            : context.layout;
+            : this.addExtension(context.layout);
 
       this.basePath = context.settings.views;
 
