@@ -2,9 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
 import { Cache, merge, is, Encoding } from '@toba/tools';
+import { placeholder, placeholderContent, each } from './helpers';
 
 const placeholderHelperName = 'block';
 const contentHelperName = 'contentFor';
+const eachHelperName = 'each';
 
 /**
  * Configuration that applies globally to the Handlebars renderer.
@@ -82,11 +84,6 @@ export class ExpressHandlebars {
    private hbs: typeof Handlebars;
    private basePath: string;
    //private filePattern: RegExp;
-   /**
-    * Placeholder blocks defined with `block` helper and populated with the
-    * `contentFor` helper.
-    */
-   private placeHolders: Map<string, string[]>;
    private partialsLoaded = false;
 
    /**
@@ -102,35 +99,15 @@ export class ExpressHandlebars {
       this.fileExtension = this.options.fileExtension;
       this.renderer = this.renderer.bind(this);
       this.registerHelper = this.registerHelper.bind(this);
-      this.placeHolders = new Map();
       //this.filePattern = new RegExp(`\.${this.fileExtension}$`);
       this.options.defaultLayout = this.addExtension(
          this.options.defaultLayout
       );
-      this.registerPlaceholderHelpers();
-   }
-
-   /**
-    * Two helpers allow a template region to be defined that other templates
-    * can insert into by name.
-    */
-   private registerPlaceholderHelpers() {
-      this.hbs.registerHelper(placeholderHelperName, (name, options) => {
-         let content = this.getPlaceholderContent(name);
-         if (is.empty(content) && is.callable(options.fn)) {
-            content = options.fn(this);
-         }
-         return content;
-      });
-
-      const self = this;
-
-      this.hbs.registerHelper(contentHelperName, function(
-         this: RenderContext,
-         name,
-         options
-      ) {
-         self.addPlaceholderContent(name, options, this);
+      // register default helpers
+      this.registerHelper({
+         [placeholderHelperName]: placeholder,
+         [contentHelperName]: placeholderContent,
+         [eachHelperName]: each
       });
    }
 
@@ -272,46 +249,6 @@ export class ExpressHandlebars {
             this.hbs.registerHelper(key, mapOrName[key]);
          });
       }
-   }
-
-   /**
-    * Defines a block into which content is inserted via `contentFor`.
-    *
-    * @example
-    * In layout.hbs
-    *
-    *  {{{block "pageStylesheets"}}}
-    */
-   getPlaceholderContent(name: string) {
-      let content = '';
-      if (this.placeHolders.has(name)) {
-         content = this.placeHolders.get(name).join('\n');
-         this.placeHolders.delete(name);
-      }
-      return content;
-   }
-
-   /**
-    * Defines content for a named block declared in layout.
-    *
-    * @example
-    *
-    * {{#contentFor "pageStylesheets"}}
-    * <link rel="stylesheet" href='{{{URL "css/style.css"}}}' />
-    * {{/contentFor}}
-    */
-   addPlaceholderContent(
-      name: string,
-      options: Handlebars.HelperOptions,
-      context: RenderContext
-   ) {
-      let ph: string[] = [];
-      if (this.placeHolders.has(name)) {
-         ph = this.placeHolders.get(name);
-      } else {
-         this.placeHolders.set(name, ph);
-      }
-      ph.push(options.fn(context));
    }
 
    /**

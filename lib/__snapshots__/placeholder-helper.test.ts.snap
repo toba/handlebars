@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`injects content into placeholder 1`] = `
+"my great page mock content One
+mock content Two"
+`;
+
+exports[`injects multiple contents into placeholders 1`] = `
+"my great page mock1 content One
+mock1 content Two
+next line mock2 content One
+mock2 content Two
+mock2 content Three
+mock2 content Four"
+`;
