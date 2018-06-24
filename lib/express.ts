@@ -50,7 +50,7 @@ interface ExpressSettings {
  * Context values available within templates and settings passed with each
  * `render()` call.
  */
-interface RenderContext {
+export interface RenderContext {
    [key: string]: any;
    /** Cache flag injected by Express. */
    cache?: boolean;
