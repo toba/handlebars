@@ -3,7 +3,7 @@ import { is } from '@toba/tools';
 import { RenderContext } from './express';
 
 interface Iterable {
-   key: string;
+   key: string | number;
    index: number;
    first: boolean;
    last: boolean;
@@ -13,76 +13,67 @@ interface EachOptions extends Handlebars.HelperOptions {
    data: Iterable;
 }
 
-export function each(this: RenderContext, context: any, options: EachOptions) {
-   if (!is.value(options)) {
-      throw Handlebars.Exception('Must pass array, Map or Set to #each');
+export function each(
+   this: RenderContext,
+   iterable: Map<any, any> | Set<any> | Array<any> | { [key: string]: any },
+   options: EachOptions
+) {
+   const template = options.fn;
+   let content = '';
+   let data: Iterable;
+
+   if (!is.value(iterable)) {
+      return '';
    }
 
-   const template = options.fn;
-   const inverse = options.inverse;
-   let i = 0;
-   let ret = '';
-   let data: any;
-
-   if (is.callable(context)) {
-      context = context.call(this);
+   if (is.callable(iterable)) {
+      iterable = iterable.call(this);
    }
 
    if (options.data) {
       data = options.data;
    }
 
-   function execIteration(
-      field: string | number,
+   function iterate(
+      key: string | number,
+      value: any,
       index: number,
       last: boolean = false
    ) {
-      if (data) {
-         data.key = field;
+      if (is.value<Iterable>(data)) {
+         data.key = key;
          data.index = index;
          data.first = index === 0;
-         data.last = !!last;
+         data.last = last;
       }
 
-      ret =
-         ret +
-         template(context[field], {
-            data: data,
-            blockParams: [context[field], field]
-         });
+      content += template(value, {
+         data,
+         blockParams: [value, key]
+      });
    }
 
-   if (context && typeof context === 'object') {
-      if (is.array(context)) {
-         for (const j = context.length; i < j; i++) {
-            if (i in context) {
-               execIteration(i, i, i === context.length - 1);
-            }
-         }
-      } else {
-         let priorKey;
+   let i = 0;
 
-         for (const key in context) {
-            if (context.hasOwnProperty(key)) {
-               // We're running the iterations one step out of sync so we can detect
-               // the last iteration without have to scan the object twice and create
-               // an itermediate keys array.
-               if (priorKey !== undefined) {
-                  execIteration(priorKey, i - 1);
-               }
-               priorKey = key;
-               i++;
-            }
-         }
-         if (priorKey !== undefined) {
-            execIteration(priorKey, i - 1, true);
-         }
+   if (iterable instanceof Map) {
+      iterable.forEach((value: any, key: any) => {
+         iterate(key, value, i);
+         i++;
+      });
+   } else if (iterable instanceof Set) {
+      iterable.forEach(value => {
+         iterate(i, value, i);
+         i++;
+      });
+   } else if (is.array(iterable)) {
+      iterable.forEach((value, index) => {
+         iterate(index, value, index);
+      });
+   } else if (typeof iterable === is.Type.Object) {
+      for (const key in iterable) {
+         iterate(key, (iterable as { [key: string]: any })[key], i);
+         i++;
       }
    }
-
-   if (i === 0) {
-      ret = inverse(this);
-   }
-
-   return ret;
+   return content;
 }
