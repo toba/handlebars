@@ -6,15 +6,15 @@ const html = `
 <div>
    <ul>
 {{#each entity}}
-      <li>{{this.key1}} and {{this.key2}}</li>
+      <li>{{this.key1}} and {{this.key2}} ({{@last}})</li>
 {{/each}}
    </ul>
 </div>`;
 const output = `
 <div>
    <ul>
-      <li>first part 1 and first part 2</li>
-      <li>second part 1 and second part 2</li>
+      <li>first part 1 and first part 2 (false)</li>
+      <li>second part 1 and second part 2 (true)</li>
    </ul>
 </div>`;
 const hbs = Handlebars.create();

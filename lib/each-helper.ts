@@ -38,13 +38,13 @@ export function each(
       key: string | number,
       value: any,
       index: number,
-      last: boolean = false
+      size: number
    ) {
       if (is.value<Iterable>(data)) {
          data.key = key;
          data.index = index;
          data.first = index === 0;
-         data.last = last;
+         data.last = index + 1 === size;
       }
 
       content += template(value, {
@@ -54,24 +54,29 @@ export function each(
    }
 
    let i = 0;
+   let size = 0;
 
    if (iterable instanceof Map) {
+      size = iterable.size;
       iterable.forEach((value: any, key: any) => {
-         iterate(key, value, i);
+         iterate(key, value, i, size);
          i++;
       });
    } else if (iterable instanceof Set) {
+      size = iterable.size;
       iterable.forEach(value => {
-         iterate(i, value, i);
+         iterate(i, value, i, size);
          i++;
       });
    } else if (is.array(iterable)) {
+      size = iterable.length;
       iterable.forEach((value, index) => {
-         iterate(index, value, index);
+         iterate(index, value, index, size);
       });
    } else if (typeof iterable === is.Type.Object) {
+      size = Object.keys(iterable).length;
       for (const key in iterable) {
-         iterate(key, (iterable as { [key: string]: any })[key], i);
+         iterate(key, (iterable as { [key: string]: any })[key], i, size);
          i++;
       }
    }
