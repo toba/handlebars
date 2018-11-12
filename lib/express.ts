@@ -30,7 +30,7 @@ export interface ExpressHandlebarsOptions {
 /**
  * Method called when a template has been rendered.
  */
-type RenderCallback = (err: Error, output?: string) => void;
+type RenderCallback = (err: Error | null, output?: string) => void;
 
 /**
  * Values set in the Express application with the `app.set(name, value)`
@@ -56,7 +56,7 @@ export interface RenderContext {
    [key: string]: any;
    /** Cache flag injected by Express. */
    cache?: boolean;
-   settings?: ExpressSettings;
+   settings: ExpressSettings;
    /**
     * Layout to render content within. Handlebars doesn't support layouts per se
     * so the layout becomes the view template to render with a `body` block
@@ -156,7 +156,9 @@ export class ExpressHandlebars {
          // render view within the layout, otherwise render without layout
          if (await this.ensurePartialsAreReady(cb)) {
             const bodyTemplate = await this.loadTemplate(viewPath);
-            context.body = bodyTemplate(context);
+            if (is.callable(bodyTemplate)) {
+               context.body = bodyTemplate(context);
+            }
             viewPath = path.join(
                this.basePath,
                this.options.layoutsFolder,
@@ -173,7 +175,9 @@ export class ExpressHandlebars {
             await this.loadPartials(this.options.partialsFolder);
             this.partialsLoaded = true;
          } catch (err) {
-            cb(err);
+            if (is.callable(cb)) {
+               cb(err);
+            }
          }
       }
       return this.partialsLoaded;
@@ -187,9 +191,13 @@ export class ExpressHandlebars {
       if (await this.ensurePartialsAreReady(cb)) {
          try {
             const template = await this.loadTemplate(viewPath);
-            cb(null, template(context));
+            if (is.callable(cb) && is.callable(template)) {
+               cb(null, template(context));
+            }
          } catch (err) {
-            cb(err);
+            if (is.callable(cb)) {
+               cb(err);
+            }
          }
       }
    }
@@ -202,7 +210,7 @@ export class ExpressHandlebars {
    private loadTemplate = (
       filePath: string,
       registerAsPartial = false
-   ): Promise<Handlebars.TemplateDelegate> =>
+   ): Promise<Handlebars.TemplateDelegate | null> =>
       new Promise((resolve, reject) => {
          if (this.cache.contains(filePath)) {
             resolve(this.cache.get(filePath));
@@ -243,7 +251,7 @@ export class ExpressHandlebars {
       fn?: Handlebars.HelperDelegate
    ) {
       if (is.text(mapOrName)) {
-         this.hbs.registerHelper(name, fn);
+         this.hbs.registerHelper(name, fn!);
       } else {
          Object.keys(mapOrName).forEach(key => {
             this.hbs.registerHelper(key, mapOrName[key]);

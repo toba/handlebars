@@ -53,7 +53,7 @@ export function placeholderContent(
 export function getContent(key: string): string {
    let content = '';
    if (contentMap.has(key)) {
-      content = contentMap.get(key).join('\n');
+      content = contentMap.get(key)!.join('\n');
       contentMap.delete(key);
    }
    return content;
@@ -72,7 +72,7 @@ export function addContent(
 ) {
    let content: string[] = [];
    if (contentMap.has(key)) {
-      content = contentMap.get(key);
+      content = contentMap.get(key)!;
    } else {
       contentMap.set(key, content);
    }
