@@ -1,6 +1,6 @@
 {
    "name": "@toba/handlebars",
-   "version": "2.0.0",
+   "version": "2.0.1",
    "description": "Toba Handlebars module",
    "private": false,
    "author": {
@@ -22,15 +22,13 @@
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@toba/build": "^1.8.4",
+      "@toba/build": "^2.0.0",
       "@toba/test": "^2.0.3",
       "@types/express": "^4.16.0",
       "@types/handlebars": "^4.0.38",
       "@types/supertest": "^2.0.4",
       "express": "^4.16.3",
-      "prettier": "^1.13.0",
-      "supertest": "^3.1.0",
-      "typescript": "^3.1.0"
+      "supertest": "^3.1.0"
    },
    "repository": {
       "type": "git",
