@@ -1,9 +1,9 @@
 import '@toba/test';
 import * as path from 'path';
-import * as Express from 'express';
-import * as request from 'supertest';
-import { ExpressHandlebars } from './';
-import { HttpStatus } from '@toba/tools';
+import Express = require('express');
+import request = require('supertest');
+import { ExpressHandlebars } from '.';
+import { HttpStatus } from '@toba/node-tools';
 
 const viewPath = path.join(__dirname, '__mocks__', 'views');
 const app = Express();
@@ -38,7 +38,7 @@ test('renders body with partial within layout', async () => {
 });
 
 test('renders without layout', async () => {
-   makeRoute('/', 'home', null);
+   makeRoute('/', 'home');
    const res = await request(app).get('/');
    expect(res.status).toBe(HttpStatus.OK);
    expect(res.text).toMatchSnapshot();
@@ -59,7 +59,7 @@ test('renders within specified layout', async () => {
 });
 
 test('renders data', async () => {
-   makeRoute('/bare-data', 'data', null);
+   makeRoute('/bare-data', 'data');
    const res = await request(app).get('/bare-data');
    expect(res.status).toBe(HttpStatus.OK);
    expect(res.text).toMatchSnapshot();

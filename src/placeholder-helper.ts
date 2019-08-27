@@ -1,5 +1,5 @@
 import * as Handlebars from 'handlebars';
-import { is } from '@toba/tools';
+import { is } from '@toba/node-tools';
 import { RenderContext } from './express';
 
 /**

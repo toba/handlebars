@@ -1,6 +1,6 @@
 {
    "name": "@toba/handlebars",
-   "version": "2.0.1",
+   "version": "2.1.0",
    "description": "Toba Handlebars module",
    "private": false,
    "author": {
@@ -11,24 +11,27 @@
    "publishConfig": {
       "access": "public"
    },
-   "main": "lib/index.ts",
-   "types:": "js/index.d.ts",
+   "main": "cjs/index.js",
+   "module": "esm/index.js",
+   "types": "esm/index.d.ts",
    "files": [
-      "lib/**/!(*.test).ts",
-      "js"
+      "esm",
+      "cjs"
    ],
    "scripts": {
-      "prepublishOnly": "./node_modules/.bin/tsc",
+      "build:esm": "./node_modules/.bin/tsc --project ./node_modules/@toba/develop/tsconfig.esm.json",
+      "build:cjs": "./node_modules/.bin/tsc --project ./node_modules/@toba/develop/tsconfig.cjs-min.json",
+      "prepublishOnly": "npm run build:esm & npm run build:cjs",
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@toba/build": "^2.0.0",
-      "@toba/test": "^2.0.3",
+      "@toba/develop": "^6.6.11",
+      "@toba/test": "^4.1.0",
       "@types/express": "^4.16.0",
       "@types/handlebars": "^4.0.38",
       "@types/supertest": "^2.0.4",
       "express": "^4.16.3",
-      "supertest": "^3.1.0"
+      "supertest": "^4.0.0"
    },
    "repository": {
       "type": "git",
@@ -37,12 +40,9 @@
    "bugs": {
       "url": "https://github.com/toba/handlebars/issues"
    },
-   "prettier": {
-      "singleQuote": true,
-      "tabWidth": 3
-   },
    "dependencies": {
-      "@toba/tools": "^4.0.3",
+      "@toba/node-tools": "^1.4.5",
+      "@toba/tools": "^6.0.0",
       "handlebars": "^4.0.11"
    }
 }

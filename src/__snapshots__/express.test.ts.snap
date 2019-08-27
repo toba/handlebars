@@ -21,12 +21,27 @@ exports[`renders body with partial within layout 1`] = `
 `;
 
 exports[`renders data 1`] = `
-"<h1>Mockery</h1>
+"<!DOCTYPE html>
+<html lang=\\"en\\">
+
+<head>
+   <meta value=\\"something\\" /> 
+</head>
+
+<body>
+   <nav>
+   Navigation
+</nav> <h1>Mockery</h1>
 <ol>
    <li>one</li>
    <li>two</li>
    <li>three</li>
-</ol>"
+</ol> <footer>
+   Footer
+</footer>
+</body>
+
+</html>"
 `;
 
 exports[`renders data within layout 1`] = `
@@ -59,8 +74,6 @@ exports[`renders within default layout 1`] = `
 
 <head>
    <meta value=\\"something\\" />    <meta name=\\"content-for\\" />
-
-   <meta name=\\"content-for\\" />
 
 </head>
 
@@ -102,8 +115,24 @@ exports[`renders within specified layout 1`] = `
 `;
 
 exports[`renders without layout 1`] = `
-"
+"<!DOCTYPE html>
+<html lang=\\"en\\">
+
+<head>
+   <meta value=\\"something\\" />    <meta name=\\"content-for\\" />
+
+</head>
+
+<body>
+   <nav>
+   Navigation
+</nav> 
 <article>
    <h1>Home</h1>
-</article>"
+</article> <footer>
+   Footer
+</footer>
+</body>
+
+</html>"
 `;

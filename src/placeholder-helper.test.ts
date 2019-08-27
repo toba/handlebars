@@ -1,5 +1,5 @@
 import '@toba/test';
-import { sayNumber } from '@toba/tools';
+import { sayNumber } from '@toba/node-tools';
 import * as Handlebars from 'handlebars';
 import { placeholder, placeholderContent } from './helpers';
 import { contentMap, addContent, getContent } from './placeholder-helper';

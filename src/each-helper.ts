@@ -1,5 +1,5 @@
 import * as Handlebars from 'handlebars';
-import { is } from '@toba/tools';
+import { is, ValueType } from '@toba/node-tools';
 import { RenderContext } from './express';
 
 interface Iterable {
@@ -73,7 +73,7 @@ export function each(
       iterable.forEach((value, index) => {
          iterate(index, value, index, size);
       });
-   } else if (typeof iterable === is.Type.Object) {
+   } else if (typeof iterable === ValueType.Object) {
       size = Object.keys(iterable).length;
       for (const key in iterable) {
          iterate(key, (iterable as { [key: string]: any })[key], i, size);

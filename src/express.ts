@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
-import { Cache, merge, is, Encoding } from '@toba/tools';
+import { Cache, merge, is, Encoding } from '@toba/node-tools';
 import { placeholder, placeholderContent, each } from './helpers';
 
 const placeholderHelperName = 'block';
