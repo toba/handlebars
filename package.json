@@ -25,8 +25,8 @@
       "test": "jest --coverage"
    },
    "devDependencies": {
-      "@toba/develop": "^6.6.11",
-      "@toba/test": "^4.1.0",
+      "@toba/develop": "^6.6.12",
+      "@toba/test": "^4.1.13",
       "@types/express": "^4.16.0",
       "@types/handlebars": "^4.0.38",
       "@types/supertest": "^2.0.4",
@@ -41,8 +41,8 @@
       "url": "https://github.com/toba/handlebars/issues"
    },
    "dependencies": {
-      "@toba/node-tools": "^1.4.5",
-      "@toba/tools": "^6.0.0",
-      "handlebars": "^4.0.11"
+      "@toba/node-tools": "^1.4.9",
+      "@toba/tools": "^6.7.7",
+      "handlebars": "^4.2.0"
    }
 }
