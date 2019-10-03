@@ -13,6 +13,9 @@ interface EachOptions extends Handlebars.HelperOptions {
    data: Iterable;
 }
 
+/**
+ * Allow `#each` to iterate over `Map` and `Set` objects.
+ */
 export function each(
    this: RenderContext,
    iterable: Map<any, any> | Set<any> | Array<any> | { [key: string]: any },

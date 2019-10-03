@@ -48,3 +48,10 @@ test('iterates over maps', () => {
    entity.set('two', { key1: 'second part 1', key2: 'second part 2' });
    render(entity);
 });
+
+test('iterates over sets', () => {
+   const entity: Set<any> = new Set();
+   entity.add({ key1: 'first part 1', key2: 'first part 2' });
+   entity.add({ key1: 'second part 1', key2: 'second part 2' });
+   render(entity);
+});
