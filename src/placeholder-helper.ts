@@ -1,13 +1,13 @@
-import * as Handlebars from 'handlebars';
-import { is } from '@toba/node-tools';
-import { RenderContext } from './express';
+import * as Handlebars from 'handlebars'
+import { is } from '@toba/node-tools'
+import { RenderContext } from './express'
 
 /**
  * Placeholder blocks defined with `placeholder` helpers and populated with the
  * `placeholderContent` helper. Multiple blocks can target the same placeholder
  * so the content is an array.
  */
-export const contentMap: Map<string, string[]> = new Map();
+export const contentMap: Map<string, string[]> = new Map()
 
 /**
  * Defines a block into which content is inserted from a `placeholderContent`
@@ -22,11 +22,11 @@ export function placeholder(
    name: string,
    options: Handlebars.HelperOptions
 ): string {
-   let content = getContent(name);
+   let content = getContent(name)
    if (is.empty(content) && is.callable(options.fn)) {
-      content = options.fn(this);
+      content = options.fn(this)
    }
-   return content;
+   return content
 }
 
 /**
@@ -44,19 +44,19 @@ export function placeholderContent(
    name: string,
    options: Handlebars.HelperOptions
 ) {
-   addContent(name, options.fn, this);
+   addContent(name, options.fn, this)
 }
 
 /**
  * Retrieve content for a particular placeholder, joining with `\n`.
  */
 export function getContent(key: string): string {
-   let content = '';
+   let content = ''
    if (contentMap.has(key)) {
-      content = contentMap.get(key)!.join('\n');
-      contentMap.delete(key);
+      content = contentMap.get(key)!.join('\n')
+      contentMap.delete(key)
    }
-   return content;
+   return content
 }
 
 /**
@@ -70,11 +70,11 @@ export function addContent(
    template: Handlebars.TemplateDelegate<any>,
    context?: RenderContext
 ) {
-   let content: string[] = [];
+   let content: string[] = []
    if (contentMap.has(key)) {
-      content = contentMap.get(key)!;
+      content = contentMap.get(key)!
    } else {
-      contentMap.set(key, content);
+      contentMap.set(key, content)
    }
-   content.push(template(context));
+   content.push(template(context))
 }

@@ -1,2 +1,2 @@
-export { placeholder, placeholderContent } from './placeholder-helper';
-export { each } from './each-helper';
+export { placeholder, placeholderContent } from './placeholder-helper'
+export { each } from './each-helper'

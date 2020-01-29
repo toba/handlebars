@@ -1,1 +1,1 @@
-export { ExpressHandlebarsOptions, ExpressHandlebars } from './express';
+export { ExpressHandlebarsOptions, ExpressHandlebars } from './express'

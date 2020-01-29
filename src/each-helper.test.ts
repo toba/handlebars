@@ -1,6 +1,6 @@
-import '@toba/test';
-import * as Handlebars from 'handlebars';
-import { each } from './helpers';
+import '@toba/test'
+import * as Handlebars from 'handlebars'
+import { each } from './helpers'
 
 const html = `
 <div>
@@ -9,49 +9,49 @@ const html = `
       <li>{{this.key1}} and {{this.key2}} ({{@last}})</li>
 {{/each}}
    </ul>
-</div>`;
+</div>`
 const output = `
 <div>
    <ul>
       <li>first part 1 and first part 2 (false)</li>
       <li>second part 1 and second part 2 (true)</li>
    </ul>
-</div>`;
-const hbs = Handlebars.create();
+</div>`
+const hbs = Handlebars.create()
 
-hbs.registerHelper('each', each);
+hbs.registerHelper('each', each)
 
 function render(
    entity: Array<any> | Map<any, any> | Set<any> | { [key: string]: any }
 ) {
-   const template = hbs.compile(html);
-   expect(template({ entity })).toBe(output);
+   const template = hbs.compile(html)
+   expect(template({ entity })).toBe(output)
 }
 
 test('iterates over arrays', () => {
    render([
       { key1: 'first part 1', key2: 'first part 2' },
       { key1: 'second part 1', key2: 'second part 2' }
-   ]);
-});
+   ])
+})
 
 test('iterates over objects', () => {
    render({
       one: { key1: 'first part 1', key2: 'first part 2' },
       two: { key1: 'second part 1', key2: 'second part 2' }
-   });
-});
+   })
+})
 
 test('iterates over maps', () => {
-   const entity: Map<string, any> = new Map();
-   entity.set('one', { key1: 'first part 1', key2: 'first part 2' });
-   entity.set('two', { key1: 'second part 1', key2: 'second part 2' });
-   render(entity);
-});
+   const entity: Map<string, any> = new Map()
+   entity.set('one', { key1: 'first part 1', key2: 'first part 2' })
+   entity.set('two', { key1: 'second part 1', key2: 'second part 2' })
+   render(entity)
+})
 
 test('iterates over sets', () => {
-   const entity: Set<any> = new Set();
-   entity.add({ key1: 'first part 1', key2: 'first part 2' });
-   entity.add({ key1: 'second part 1', key2: 'second part 2' });
-   render(entity);
-});
+   const entity: Set<any> = new Set()
+   entity.add({ key1: 'first part 1', key2: 'first part 2' })
+   entity.add({ key1: 'second part 1', key2: 'second part 2' })
+   render(entity)
+})
