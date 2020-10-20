@@ -1,6 +1,6 @@
 {
    "name": "@toba/handlebars",
-   "version": "2.1.2",
+   "version": "2.1.3",
    "description": "Toba Handlebars module",
    "private": false,
    "author": {
@@ -19,8 +19,8 @@
       "cjs"
    ],
    "scripts": {
-      "build:esm": "./node_modules/.bin/tsc --project ./node_modules/@toba/develop/tsconfig.esm.json",
-      "build:cjs": "./node_modules/.bin/tsc --project ./node_modules/@toba/develop/tsconfig.cjs-min.json",
+      "build:esm": "tsc --project ./node_modules/@toba/develop/tsconfig.esm.json",
+      "build:cjs": "tsc --project ./node_modules/@toba/develop/tsconfig.cjs-min.json",
       "prepublishOnly": "npm run build:esm & npm run build:cjs",
       "test": "jest --coverage"
    },
